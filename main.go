@@ -14,6 +14,9 @@ func main() {
 
 	kafka.InitProducer(cfg.Kafka.Brokers)
 
+	sampleMessage := []byte("Sample ready process message")
+	kafka.Produce("testing-ready-queue", sampleMessage)
+
 	ready_process.InitReadyProcessorConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
 	email_dispatcher.InitEmailDispatcherConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
 	push_dispatcher.InitPushDispatcherConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
