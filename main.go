@@ -3,21 +3,22 @@ package main
 import (
 	"kafka_test/config"
 	"kafka_test/kafka"
+	"kafka_test/modules/email_dispatcher"
+	"kafka_test/modules/push_dispatcher"
+	ready_process "kafka_test/modules/ready_process"
+	"kafka_test/modules/recsys_queue"
 )
 
 func main() {
-	// Initialize config
 	cfg := config.LoadConfig()
 
-	// Initialize Kafka
-	kafka.InitKafka(cfg)
+	kafka.InitProducer(cfg.Kafka.Brokers)
 
-	// Example usage
-	kafka.ProduceMessage("my_topic", "Hello Kafka")
+	ready_process.InitReadyProcessorConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
+	email_dispatcher.InitEmailDispatcherConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
+	push_dispatcher.InitPushDispatcherConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
+	recsys_queue.InitRecSysQueueConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup)
 
-	// Start consuming messages
-	go kafka.StartConsumer("my_topic", "my_group")
-
-	// Keep the application running
+	// The application should keep running to listen for messages
 	select {}
 }

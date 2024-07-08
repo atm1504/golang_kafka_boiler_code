@@ -2,20 +2,34 @@ package kafka
 
 import (
 	"log"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
-func StartConsumer(topic, group string) {
-	err := consumer.SubscribeTopics([]string{topic}, nil)
+func InitConsumer(brokers, groupID string, topics []string, handler func(*kafka.Message)) {
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  brokers,
+		"group.id":           groupID,
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": false,
+	})
 	if err != nil {
-		log.Fatalf("Failed to subscribe to topics: %v", err)
+		log.Fatalf("Failed to create consumer: %s", err)
 	}
 
-	for {
-		msg, err := consumer.ReadMessage(-1)
-		if err == nil {
-			log.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-		} else {
-			log.Printf("Consumer error: %v (%v)\n", err, msg)
-		}
+	err = c.SubscribeTopics(topics, nil)
+	if err != nil {
+		log.Fatalf("Failed to subscribe to topics: %s", err)
 	}
+
+	go func() {
+		for {
+			msg, err := c.ReadMessage(-1)
+			if err == nil {
+				handler(msg)
+			} else {
+				log.Printf("Consumer error: %v (%v)\n", err, msg)
+			}
+		}
+	}()
 }
